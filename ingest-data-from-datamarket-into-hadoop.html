@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <title>marcel.is: How to ingest data from Azure DataMarket into Hadoop</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="/theme/css/main.css" type="text/css" />
+        <link href="/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="marcel.is ATOM Feed" />
+
+        <!--[if IE]>
+                <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+
+        <!--[if lte IE 7]>
+                <link rel="stylesheet" type="text/css" media="all" href="/css/ie.css"/>
+                <script src="/js/IE8.js" type="text/javascript"></script><![endif]-->
+
+        <!--[if lt IE 7]>
+                <link rel="stylesheet" type="text/css" media="all" href="/css/ie6.css"/><![endif]-->
+
+</head>
+
+<body>
+<h1>How to ingest data from Azure DataMarket into Hadoop
+</h1>
+<p class="date">April 2015 </p>
+<article>
+    <p>For those of you who haven't encountered it yet, <a href="https://datamarket.azure.com/browse/data">Azure DataMarket</a>
+is quite an exciting platform by Microsoft which provides standardized access
+to plenty of interesting datasets. As of now, there are over 200 datasets  from broad range of topics, including weather, demographics, automotive, agriculture,  real-estate, etc. There might be a golden nugget for your bussiness hidden in there, so I would definitely recommend to go and <a href="https://datamarket.azure.com/browse/data">check the platform out</a>.</p>
+<p>Recently, we have discovered such a golden nugget ourselves: details about every car sold in Netherlands in the past 15 years. A pretty exciting dataset, considering that the company I work for operates in the Dutch market of electric vehicles. What is more, the data is <strong>free</strong>, <strong>updated daily</strong> and comes shipped with a <strong>REST API interface</strong>. What more can we wish for?</p>
+<p>To maximally leverage potential of the dataset, we ingest it into Hive, which allows us to:</p>
+<ul>
+<li><strong>run fast ad-hoc exploratory SQL queries</strong> with <a href="http://impala.io/">Impala</a>,</li>
+<li><strong>explore the dataset</strong> with BI tools,</li>
+<li><strong>enrich the data model</strong> by combining car details with other data and</li>
+<li><strong>expand our dashboards</strong> with insights about the car market.</li>
+</ul>
+<h2>Avro-backed external Hive tables FTW!</h2>
+<p>Regarding the storage, we opted for an <a href="https://cwiki.apache.org/confluence/display/Hive/AvroSerDe">Avro-backed</a> <a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables">external</a> Hive table. These types of tables rock, since:</p>
+<ul>
+<li><strong>Hive automatically infers table schema from the Avro schema</strong>. There is no need to explicitly enumerate columns with their types, which is very useful if you deal with tables of many columns.</li>
+<li><strong>Changes in table schema are not an issue</strong>. You just recreate the table with the new Avro schema and the <a href="http://blog.cloudera.com/blog/2011/05/three-reasons-why-apache-avro-data-serialization-is-a-good-choice-for-openrtb/">Avro schema evolution</a> will automagically take care of properly reading the data stored with the old schema.</li>
+<li><strong>Data is easily processed by other tools</strong> like Apache Spark or MapReduce. The data resides in a directory of your choice (rather than in a Hive directory) and the Avro format has first-class support in Hadoop tooling.</li>
+<li><strong>New data is easily added to the table</strong>. Just add a new Avro file to the corresponding HDFS directory and Hive will automatically pick it up. With Impala, call <code>REFRESH &lt;table-name&gt;;</code> to notify Impala about arrival of new data.</li>
+<li><strong><a href="http://blog.cloudera.com/blog/2014/08/improving-query-performance-using-partitioning-in-apache-hive/">Hive data partitioning</a> is well supported</strong> so you can optimize for query performance.</li>
+<li><strong>Dropping external Hive table does not delete data from HDFS</strong>. Small thing, but very handy.</li>
+</ul>
+<h2>Ingestion: From OData XML to an Avro Hive table</h2>
+<p>Here are detailed steps how we get that data from DataMarket into Hive.</p>
+<h3>Step 1: Download the dataset as XML files, in a standardized OData format</h3>
+<p>DataMarket publishes datasets as XML. Each XML follows the same <a href="http://www.odata.org/documentation/odata-version-2-0/atom-format">OData schema</a> (checkout the <a href="https://api.datamarket.azure.com/opendata.rdw/VRTG.Open.Data/v1/KENT_VRTG_O_DAT">example XML</a> with cars data). DataMarket provides this data via a REST interface, which supports various <a href="https://msdn.microsoft.com/en-us/library/gg312156.aspx">query parameters</a>. Using the parameters, you control the subset of data you want to download.</p>
+<p>Since the car dataset that we are interested in is about 15 GiB large, filtering proved very useful for our purposes. With the <code>$filter</code>, <code>$top</code> and <code>$inlinecount</code> parameters and a bit of <code>curl</code> and Bash, it is straightforward to download the whole dataset into files <code>cars_2000.xml</code> till  <code>cars_2015.xml</code>, where the number indicates the year where a car was registered in Netherlands.</p>
+<h3>Step 2: Convert the dataset into Avro, using <code>odata2avro</code> utility</h3>
+<p>To convert an XML file in OData schema to Avro, we created a Python command-line tool called <a href="https://github.com/datadudes/odata2avro">odata2avro</a> which does all the heavy lifting for you.</p>
+<p>Just install the tool with <code>pip install odata2avro</code> and use it as follows:</p>
+<div class="highlight"><pre><span></span>$ odata2avro cars_2013.xml cars.avsc cars_2013.avro
+</pre></div>
+
+
+<p>This command reads an XML file <code>cars_2013.xml</code> and creates two files:</p>
+<ul>
+<li><code>cars.avsc</code> - an Avro schema, in json, describing the dataset,</li>
+<li><code>cars_2013.avro</code> - a binary Avro file containing the dataset from the XML.</li>
+</ul>
+<h3>Step 3: Upload the Avro schema and Avro files to HDFS</h3>
+<p>In this case, let's create and upload the data to <code>/datamarket</code> HDFS directory:</p>
+<div class="highlight"><pre><span></span>$ hdfs dfs -mkdir -p /datamarket/cars
+$ hdfs dfs -put cars_20*.xml /datamarket/cars
+$ hdfs dfs -put cars.avsc /datamarket
+</pre></div>
+
+
+<h3>Step 4: Create an external Avro-backed Hive table</h3>
+<p>To create an external Hive table with a schema according to  <code>/datamarket/cars.avsc</code> and the data located in <code>/datamarket/cars</code>, use the following Hive command with the <a href="https://cwiki.apache.org/confluence/display/Hive/AvroSerDe">AvroSerDe</a>:</p>
+<div class="highlight"><pre><span></span><span class="nt">CREATE</span> <span class="nt">EXTERNAL</span> <span class="nt">TABLE</span> <span class="nt">cars</span>
+<span class="nt">ROW</span> <span class="nt">FORMAT</span> <span class="nt">SERDE</span> <span class="s1">&#39;org.apache.hadoop.hive.serde2.avro.AvroSerDe&#39;</span>
+<span class="nt">STORED</span> <span class="nt">AS</span> <span class="nt">INPUTFORMAT</span> <span class="s1">&#39;org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat&#39;</span>
+<span class="nt">OUTPUTFORMAT</span> <span class="s1">&#39;org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat&#39;</span>
+<span class="nt">LOCATION</span> <span class="s1">&#39;/datamarket/cars&#39;</span>
+<span class="nt">TBLPROPERTIES</span> <span class="o">(</span><span class="s1">&#39;avro.schema.url&#39;</span><span class="o">=</span><span class="s1">&#39;hdfs:///datamarket/cars.avsc&#39;</span><span class="o">);</span>
+</pre></div>
+
+
+<h3>Step 5: Query &amp; profit!</h3>
+<p>Congrats! As of now, the data is accessible in both Hive and Impala:</p>
+<div class="highlight"><pre><span></span>$ impala-shell --query <span class="s1">&#39;select * from cars;&#39;</span>
+</pre></div>
+
+
+<h2>Bonus step: Keeping data updated</h2>
+<p>The <em>car</em> dataset is append-only, so for us it's pretty straightforward to keep the data in Hive updated. We run a daily job which:</p>
+<ul>
+<li>downloads XML data from DataMarket for the current year 2015,</li>
+<li>converts the XML data to an Avro file called <code>cars_2015.avro</code>,</li>
+<li>uploads the Avro file to HDFS and replaces the file uploaded on the previous day and</li>
+<li>calls <code>REFRESH cars;</code> so Impala registers the new data.</li>
+</ul>
+<p>That's all!</p>
+</article>
+<p class="footer"><a href="/home">home</a></p>
+
+</body>
+</html>

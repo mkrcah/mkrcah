@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="/" rel="alternate"></link><link href="/feeds/all.atom.xml" rel="self"></link><id>/</id><updated>2015-05-05T00:00:00+02:00</updated><entry><title>How a newline can ruin your Hive</title><link href="/how-newline-can-ruin-your-hive.html" rel="alternate"></link><published>2015-05-05T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:,2015-05-05:how-newline-can-ruin-your-hive.html</id><summary type="html">&lt;p&gt;If you do not fully understand how Hive/Impala stores your data, it might cost you badly.&lt;/p&gt;
+&lt;p&gt;I've learnt the hard way.&lt;/p&gt;
+&lt;h2&gt;Symptom #1: Weird values in ingested Hive table&lt;/h2&gt;
+&lt;p&gt;You double-checked with &lt;code&gt;select distinct(gender) from customers&lt;/code&gt; that the &lt;code&gt;gender&lt;/code&gt; column in your source RDBMS really contains only values &lt;code&gt;male&lt;/code&gt;, &lt;code&gt;female&lt;/code&gt; and &lt;code&gt;NULL&lt;/code&gt;. However, when you ingest the table into Hive (maybe with &lt;a href="http://sqoop.apache.org/"&gt;Apache Sqoop&lt;/a&gt; or &lt;a href="https://github.com/datadudes/cornet"&gt;Cornet&lt;/a&gt;) and run the check there,  you see that weird values have creeped in:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&amp;gt; select distinct(gender) from customers;  // Run in Hive/Impala
++-----------------+
+| gender          |
++-----------------+
+| NULL            |
+| CA 94304        |
+| male            |
+| Page Mill Road  |
+| female          |
++-----------------+
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Symptom #2: Inconsistent size of ingested Hive table&lt;/h2&gt;
+&lt;p&gt;You check with &lt;code&gt;select count(*) from customers&lt;/code&gt; that the table in your RDBMS table has &lt;code&gt;156,010&lt;/code&gt; rows.  You ingest the table into Hive and BAM! All of a sudden there are 14 more customers.&lt;/p&gt;
+&lt;p&gt;Maybe the business is doing great and you gained 14 customers before you started the ingestion? Wondering, you check the source table size again.&lt;/p&gt;
+&lt;p&gt;Still &lt;code&gt;156,010&lt;/code&gt;.&lt;/p&gt;
+&lt;h2&gt;Symptom #3: Weird data when copied from another Hive table&lt;/h2&gt;
+&lt;p&gt;This one is by far the most strange one.&lt;/p&gt;
+&lt;p&gt;You already have the &lt;code&gt;customers&lt;/code&gt; table ingested in Hive. Values in the &lt;code&gt;gender&lt;/code&gt; column look fine. The table has correct size of &lt;code&gt;156,010&lt;/code&gt;. All is fine.&lt;/p&gt;
+&lt;p&gt;You do some data cleaning with SQL and copy the result into a new table as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;CREATE TABLE customers_superclean
+AS SELECT name, coalesce(gender, &amp;#39;unknown&amp;#39;) FROM customers;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You check the size of the new table. BAM! 25 new customers in there. Impossible!&lt;/p&gt;
+&lt;h2&gt;No errors, no warnings&lt;/h2&gt;
+&lt;p&gt;Neither Hive, Impala nor Sqoop gave you any error or warning. You have no idea what's going on. Somewhere at the back of your head, you start questioning the whole Hadoop infrastructure. You feel like the cool stuff you do all day with the data has been compromised.&lt;/p&gt;
+&lt;h2&gt;Cause: Hive delimiters present in the data&lt;/h2&gt;
+&lt;p&gt;All these problems can occur if the ingested data contains characters that Hive uses to delimit fields and rows. Typically, these are newlines. For instance, let's assume that the &lt;code&gt;customers&lt;/code&gt; table in the source RDBMS contains the following data (notice the newline in the first street name):&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;gender&lt;/th&gt;
+&lt;th&gt;street&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;male&lt;/td&gt;
+&lt;td&gt;Page Mill Road&lt;code&gt;\n&lt;/code&gt;CA 94304&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;female&lt;/td&gt;
+&lt;td&gt;Great America Parkway&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;If one naively ingests this data into a Hive table using the default settings (a text file with rows delimited by &lt;code&gt;\01&lt;/code&gt; and fields delimited by newlines), the data gets broken. Look at the corresponding delimited file in HDFS:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;male\01Page Mill Road
+CA 94304
+female\01Great America Parkway
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When Hive/Impala reads from this file, it finds three customers instead of two. The additional customer is of gender &lt;code&gt;CA 94304&lt;/code&gt; and has no street specified. On top of that, the street field of the first customer misses the postal code.&lt;/p&gt;
+&lt;h2&gt;Particularly interesting case: Copying binary data to text file&lt;/h2&gt;
+&lt;p&gt;Assume that the Hive table called &lt;code&gt;customers&lt;/code&gt; uses Avro or Parquet for data storage and that the data contains newlines. Querying the &lt;code&gt;customers&lt;/code&gt; table directly via Hive or Impala works as expected. However, let's create a new table as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;CREATE TABLE customers_superclean
+AS SELECT gender, street FROM CUSTOMERS;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The problem with this command is that the new table is backed by a newline-delimited text file. An Avro/Parquet record which contains a newline will be split into two records in the new table. Symptom #3 is born.&lt;/p&gt;
+&lt;h2&gt;Solution 1: Use binary storage formats like Avro or Parquet&lt;/h2&gt;
+&lt;p&gt;If possible, use binary storage for your Hive tables, for instance &lt;a href="https://avro.apache.org/"&gt;Apache Avro&lt;/a&gt; or &lt;a href="http://parquet.apache.org/"&gt;Apache Parquet&lt;/a&gt;. Since these formats do not use dedicated characters to split a file into records and fields, Hive/Impala can read data with special characters properly.&lt;/p&gt;
+&lt;p&gt;Also, Avro and Parquet make it possible to safely copy records from one Hive table to another. For instance, checkout the following command which copies data to a Parquet table:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;CREATE TABLE customers_superclean STORED AS parquet
+AS SELECT gender, street FROM customers;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The Parquet storage will ensure that even if  data in the &lt;code&gt;customers&lt;/code&gt; table contains newlines or another delimiters, the data will be properly copied and interpreted in the new table.&lt;/p&gt;
+&lt;h2&gt;Solution 2: Ensure the delimited text file does not contain Hive delimiters&lt;/h2&gt;
+&lt;p&gt;When ingesting data into a delimited text file, you have to ensure that the file does not contain characters that Hive uses to split data into rows and fields. In general, there are two options to achieve this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Remove Hive delimiters from the data before ingestion. If you use Sqoop, there are handy parameters which can do that for you. Checkout the &lt;a href="https://sqoop.apache.org/docs/1.4.5/SqoopUserGuide.html#_importing_data_into_hive"&gt;Sqoop docs&lt;/a&gt; and look for &lt;code&gt;--hive-drop-import-delims&lt;/code&gt; and  &lt;code&gt;--hive-delims-replacement&lt;/code&gt; parameters.&lt;/li&gt;
+&lt;li&gt;Use custom Hive delimiters that are not present in the data. Unused &lt;a href="http://en.wikipedia.org/wiki/ASCII#ASCII_control_characters"&gt;non-printable characters&lt;/a&gt; are good candidates, for instance &lt;code&gt;\01&lt;/code&gt; or &lt;code&gt;\02&lt;/code&gt;. You can instruct Hive &lt;a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-RowFormat,StorageFormat,andSerDe"&gt;to use custom delimiters&lt;/a&gt; as follows:&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;CREATE TABLE customers
+ROW FORMAT DELIMITED
+  LINES TERMINATED BY &amp;#39;\002&amp;#39;
+  FIELDS TERMINATED BY &amp;#39;\001&amp;#39;;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Happy ingesting!&lt;/p&gt;</summary><category term="hive"></category><category term="impala"></category><category term="avro"></category><category term="parquet"></category><category term="sqoop"></category><category term="cornet"></category></entry><entry><title>How to ingest data from Azure DataMarket into Hadoop</title><link href="/ingest-data-from-datamarket-into-hadoop.html" rel="alternate"></link><published>2015-04-01T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:,2015-04-01:ingest-data-from-datamarket-into-hadoop.html</id><summary type="html">&lt;p&gt;For those of you who haven't encountered it yet, &lt;a href="https://datamarket.azure.com/browse/data"&gt;Azure DataMarket&lt;/a&gt;
+is quite an exciting platform by Microsoft which provides standardized access
+to plenty of interesting datasets. As of now, there are over 200 datasets  from broad range of topics, including weather, demographics, automotive, agriculture,  real-estate, etc. There might be a golden nugget for your bussiness hidden in there, so I would definitely recommend to go and &lt;a href="https://datamarket.azure.com/browse/data"&gt;check the platform out&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Recently, we have discovered such a golden nugget ourselves: details about every car sold in Netherlands in the past 15 years. A pretty exciting dataset, considering that the company I work for operates in the Dutch market of electric vehicles. What is more, the data is &lt;strong&gt;free&lt;/strong&gt;, &lt;strong&gt;updated daily&lt;/strong&gt; and comes shipped with a &lt;strong&gt;REST API interface&lt;/strong&gt;. What more can we wish for?&lt;/p&gt;
+&lt;p&gt;To maximally leverage potential of the dataset, we ingest it into Hive, which allows us to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;run fast ad-hoc exploratory SQL queries&lt;/strong&gt; with &lt;a href="http://impala.io/"&gt;Impala&lt;/a&gt;,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;explore the dataset&lt;/strong&gt; with BI tools,&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;enrich the data model&lt;/strong&gt; by combining car details with other data and&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;expand our dashboards&lt;/strong&gt; with insights about the car market.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Avro-backed external Hive tables FTW!&lt;/h2&gt;
+&lt;p&gt;Regarding the storage, we opted for an &lt;a href="https://cwiki.apache.org/confluence/display/Hive/AvroSerDe"&gt;Avro-backed&lt;/a&gt; &lt;a href="https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-ExternalTables"&gt;external&lt;/a&gt; Hive table. These types of tables rock, since:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Hive automatically infers table schema from the Avro schema&lt;/strong&gt;. There is no need to explicitly enumerate columns with their types, which is very useful if you deal with tables of many columns.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Changes in table schema are not an issue&lt;/strong&gt;. You just recreate the table with the new Avro schema and the &lt;a href="http://blog.cloudera.com/blog/2011/05/three-reasons-why-apache-avro-data-serialization-is-a-good-choice-for-openrtb/"&gt;Avro schema evolution&lt;/a&gt; will automagically take care of properly reading the data stored with the old schema.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Data is easily processed by other tools&lt;/strong&gt; like Apache Spark or MapReduce. The data resides in a directory of your choice (rather than in a Hive directory) and the Avro format has first-class support in Hadoop tooling.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;New data is easily added to the table&lt;/strong&gt;. Just add a new Avro file to the corresponding HDFS directory and Hive will automatically pick it up. With Impala, call &lt;code&gt;REFRESH &amp;lt;table-name&amp;gt;;&lt;/code&gt; to notify Impala about arrival of new data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a href="http://blog.cloudera.com/blog/2014/08/improving-query-performance-using-partitioning-in-apache-hive/"&gt;Hive data partitioning&lt;/a&gt; is well supported&lt;/strong&gt; so you can optimize for query performance.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Dropping external Hive table does not delete data from HDFS&lt;/strong&gt;. Small thing, but very handy.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Ingestion: From OData XML to an Avro Hive table&lt;/h2&gt;
+&lt;p&gt;Here are detailed steps how we get that data from DataMarket into Hive.&lt;/p&gt;
+&lt;h3&gt;Step 1: Download the dataset as XML files, in a standardized OData format&lt;/h3&gt;
+&lt;p&gt;DataMarket publishes datasets as XML. Each XML follows the same &lt;a href="http://www.odata.org/documentation/odata-version-2-0/atom-format"&gt;OData schema&lt;/a&gt; (checkout the &lt;a href="https://api.datamarket.azure.com/opendata.rdw/VRTG.Open.Data/v1/KENT_VRTG_O_DAT"&gt;example XML&lt;/a&gt; with cars data). DataMarket provides this data via a REST interface, which supports various &lt;a href="https://msdn.microsoft.com/en-us/library/gg312156.aspx"&gt;query parameters&lt;/a&gt;. Using the parameters, you control the subset of data you want to download.&lt;/p&gt;
+&lt;p&gt;Since the car dataset that we are interested in is about 15 GiB large, filtering proved very useful for our purposes. With the &lt;code&gt;$filter&lt;/code&gt;, &lt;code&gt;$top&lt;/code&gt; and &lt;code&gt;$inlinecount&lt;/code&gt; parameters and a bit of &lt;code&gt;curl&lt;/code&gt; and Bash, it is straightforward to download the whole dataset into files &lt;code&gt;cars_2000.xml&lt;/code&gt; till  &lt;code&gt;cars_2015.xml&lt;/code&gt;, where the number indicates the year where a car was registered in Netherlands.&lt;/p&gt;
+&lt;h3&gt;Step 2: Convert the dataset into Avro, using &lt;code&gt;odata2avro&lt;/code&gt; utility&lt;/h3&gt;
+&lt;p&gt;To convert an XML file in OData schema to Avro, we created a Python command-line tool called &lt;a href="https://github.com/datadudes/odata2avro"&gt;odata2avro&lt;/a&gt; which does all the heavy lifting for you.&lt;/p&gt;
+&lt;p&gt;Just install the tool with &lt;code&gt;pip install odata2avro&lt;/code&gt; and use it as follows:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ odata2avro cars_2013.xml cars.avsc cars_2013.avro
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This command reads an XML file &lt;code&gt;cars_2013.xml&lt;/code&gt; and creates two files:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;cars.avsc&lt;/code&gt; - an Avro schema, in json, describing the dataset,&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;cars_2013.avro&lt;/code&gt; - a binary Avro file containing the dataset from the XML.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Step 3: Upload the Avro schema and Avro files to HDFS&lt;/h3&gt;
+&lt;p&gt;In this case, let's create and upload the data to &lt;code&gt;/datamarket&lt;/code&gt; HDFS directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ hdfs dfs -mkdir -p /datamarket/cars
+$ hdfs dfs -put cars_20*.xml /datamarket/cars
+$ hdfs dfs -put cars.avsc /datamarket
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Step 4: Create an external Avro-backed Hive table&lt;/h3&gt;
+&lt;p&gt;To create an external Hive table with a schema according to  &lt;code&gt;/datamarket/cars.avsc&lt;/code&gt; and the data located in &lt;code&gt;/datamarket/cars&lt;/code&gt;, use the following Hive command with the &lt;a href="https://cwiki.apache.org/confluence/display/Hive/AvroSerDe"&gt;AvroSerDe&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nt"&gt;CREATE&lt;/span&gt; &lt;span class="nt"&gt;EXTERNAL&lt;/span&gt; &lt;span class="nt"&gt;TABLE&lt;/span&gt; &lt;span class="nt"&gt;cars&lt;/span&gt;
+&lt;span class="nt"&gt;ROW&lt;/span&gt; &lt;span class="nt"&gt;FORMAT&lt;/span&gt; &lt;span class="nt"&gt;SERDE&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;org.apache.hadoop.hive.serde2.avro.AvroSerDe&amp;#39;&lt;/span&gt;
+&lt;span class="nt"&gt;STORED&lt;/span&gt; &lt;span class="nt"&gt;AS&lt;/span&gt; &lt;span class="nt"&gt;INPUTFORMAT&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;org.apache.hadoop.hive.ql.io.avro.AvroContainerInputFormat&amp;#39;&lt;/span&gt;
+&lt;span class="nt"&gt;OUTPUTFORMAT&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;org.apache.hadoop.hive.ql.io.avro.AvroContainerOutputFormat&amp;#39;&lt;/span&gt;
+&lt;span class="nt"&gt;LOCATION&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;/datamarket/cars&amp;#39;&lt;/span&gt;
+&lt;span class="nt"&gt;TBLPROPERTIES&lt;/span&gt; &lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;avro.schema.url&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;hdfs:///datamarket/cars.avsc&amp;#39;&lt;/span&gt;&lt;span class="o"&gt;);&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Step 5: Query &amp;amp; profit!&lt;/h3&gt;
+&lt;p&gt;Congrats! As of now, the data is accessible in both Hive and Impala:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ impala-shell --query &lt;span class="s1"&gt;&amp;#39;select * from cars;&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Bonus step: Keeping data updated&lt;/h2&gt;
+&lt;p&gt;The &lt;em&gt;car&lt;/em&gt; dataset is append-only, so for us it's pretty straightforward to keep the data in Hive updated. We run a daily job which:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;downloads XML data from DataMarket for the current year 2015,&lt;/li&gt;
+&lt;li&gt;converts the XML data to an Avro file called &lt;code&gt;cars_2015.avro&lt;/code&gt;,&lt;/li&gt;
+&lt;li&gt;uploads the Avro file to HDFS and replaces the file uploaded on the previous day and&lt;/li&gt;
+&lt;li&gt;calls &lt;code&gt;REFRESH cars;&lt;/code&gt; so Impala registers the new data.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;That's all!&lt;/p&gt;</summary><category term="avro"></category><category term="hive"></category><category term="impala"></category><category term="hdfs"></category><category term="azure"></category><category term="odata"></category><category term="xml"></category><category term="odata2avro"></category></entry><entry><title>Introduction to Apache Zookeeper, backbone of big-data systems</title><link href="/introduction-to-apache-zookeeper.html" rel="alternate"></link><published>2015-01-09T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:,2015-01-09:introduction-to-apache-zookeeper.html</id><summary type="html">&lt;p&gt;Apache Kafka, Mesos, Hadoop/YARN, Neo4J, HBase, Solr. All of these services
+(and &lt;a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/PoweredBy"&gt;many others&lt;/a&gt;)
+are built on top of Apache ZooKeeper. ZooKeeper is also a part of
+all Hadoop distributions (e.g. &lt;a href="http://www.cloudera.com/content/cloudera/en/products-and-services/cdh.html"&gt;Cloudera CDH&lt;/a&gt;)
+and is used in many companies, including LinkedIn, Twitter, Netflix or Yahoo.&lt;/p&gt;
+&lt;p&gt;So what is ZooKeeper all about and why is it that popular?&lt;/p&gt;
+&lt;h2&gt;In summary, ZooKeeper helps to build a distributed system&lt;/h2&gt;
+&lt;p&gt;Following the Unix philosophy of small yet powerful tools,
+Zookeeper is a service that allows distributed processes to coordinate with each other.
+Instead of developing such a coordination system from scratch, you can re-use ZooKeeper
+and benefit from its best-practice proven implementation.&lt;/p&gt;
+&lt;p&gt;Distributed systems use ZooKeeper for service discovery, cluster monitoring,
+configuration management, leader election or naming service. Also, ZooKeeper
+provides foundation for building higher-level distributed functions like locks, barriers,
+queues, two-phase commits, etc.&lt;/p&gt;
+&lt;p&gt;Or, as the Apache Zookeeper PMC &lt;a href="https://www.hakkalabs.co/articles/apache-zookeeper-introduction/"&gt;puts it&lt;/a&gt;:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;If you are doing distributed locking and you are not using ZooKeeper, you are crazy - Camille Fournier, Apache ZooKeeper PMC&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;ZooKeeper fundamentals: Z-nodes&lt;/h2&gt;
+&lt;p&gt;ZooKeeper itself is a distributed highly-available service that manages
+a shared hierarchical name space of data registers, called &lt;strong&gt;z-nodes&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Z-nodes&lt;/strong&gt; very much resemble a filesystem. Each z-node has a path, e.g. &lt;code&gt;/services/product&lt;/code&gt;, and data, given as &lt;code&gt;byte[]&lt;/code&gt;. However, unlike directories in a filesystem, parent z-nodes can also carry data.&lt;/p&gt;
+&lt;p&gt;Here is an example of z-nodes hierarchy:
+&lt;img alt="Illustration of Zookeeper z-nodes" src="/images/zookeeper-znodes.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;ZooKeeper provides a simple yet powerful &lt;a href="https://zookeeper.apache.org/doc/r3.3.3/api/org/apache/zookeeper/ZooKeeper.html"&gt;API&lt;/a&gt;
+for z-node management. You can &lt;em&gt;create&lt;/em&gt;, &lt;em&gt;get&lt;/em&gt;, &lt;em&gt;update&lt;/em&gt; and &lt;em&gt;delete&lt;/em&gt; a z-node, ask if it &lt;em&gt;exists&lt;/em&gt;
+and &lt;em&gt;get children&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;The interesting part, however, lies in the &lt;strong&gt;consistency guarantees&lt;/strong&gt; that ZooKeeper provides:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Sequential consistency&lt;/strong&gt; -  Updates are applied in order they are received by ZooKeeper&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Update atomicity&lt;/strong&gt; - Updates are either successful or failed. No partial results&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Single system image&lt;/strong&gt; - A client sees the same view of the service regardless of the ZooKeeper server it connects to&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Reliability&lt;/strong&gt; - Once an update has been applied, it will persist from that time forward until a client overwrites the update&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Timeliness&lt;/strong&gt; - The clients view of the system is guaranteed to be up-to-date within a certain time bound&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I hope that by now you start to feel the power of ZooKeeper. However, this is not all.&lt;/p&gt;
+&lt;h2&gt;Persistent, ephemeral and sequential z-nodes&lt;/h2&gt;
+&lt;p&gt;Regarding persistence, ZooKeeper offers two types of z-nodes: &lt;strong&gt;persistent&lt;/strong&gt; and &lt;strong&gt;ephemeral&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Persistent z-nodes&lt;/strong&gt; are the default z-nodes, they exist until they are explicitly deleted.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ephemeral z-nodes&lt;/strong&gt;, on the other hand, are attached to a client session. If a
+client dies, the session is terminated and the ephemeral z-done is deleted. How great is that!
+You can very easily monitor clieant failures: If a client responsible for
+performing an exclusive operation fails, the corresponding ephemeral z-node is deleted and other clients
+are notified to take over the operation.&lt;/p&gt;
+&lt;p&gt;Both persistent and ephemeral z-nodes can be also marked as &lt;strong&gt;sequential&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;For &lt;strong&gt;sequential z-nodes&lt;/strong&gt;, ZooKeeper automatically appends a monotically increasing counter to the end of a path.
+This is greatly helpful for synchronization: if more clients want to get a lock on a resource &lt;code&gt;A&lt;/code&gt;,
+they can each create a sequential z-node on path &lt;code&gt;resource/A&lt;/code&gt;. The client getting the lowest number is entitled to the lock.&lt;/p&gt;
+&lt;h2&gt;Watches&lt;/h2&gt;
+&lt;p&gt;ZooKeeper also offers a mechanism called &lt;strong&gt;watches&lt;/strong&gt;.
+A watch is just a one-time callback, which is triggered every time
+a z-node changes. Watches are one-shot - if you need to continually monitor a z-node,
+you need to reset the watch after each event.&lt;/p&gt;
+&lt;p&gt;Watches are very useful to if you don't want to periodically poll your z-nodes.&lt;/p&gt;
+&lt;h2&gt;Fault-tolerant, highly-available, read-performant&lt;/h2&gt;
+&lt;p&gt;Zookeeper can run in both stand-alone and distributed fault-tolerant mode.
+When running in a cluster, a group of ZooKeeper servers is called an &lt;strong&gt;ensemble&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Regarding node failures, ZooKeeper &lt;strong&gt;tolerates loss of ensemble minority&lt;/strong&gt;
+(there is &lt;a href="http://en.wikipedia.org/wiki/Paxos_%28computer_science%29"&gt;Paxos&lt;/a&gt; under the hood).
+So if the ensemble consists of three or four machines, ZooKeeper will tolerate failure
+of only one machine in both of these cases. This is why it is recommended
+to run the ZooKeeper ensemble on &lt;strong&gt;an odd number of hosts&lt;/strong&gt;, since even number
+of machines doesn't bring any benefit with respect to node failures.&lt;/p&gt;
+&lt;p&gt;ZooKeeper data is kept in memory and is backed up to a log for reliability.
+It is optimized for read dominant workloads, handling up to 50k operations per second.&lt;/p&gt;
+&lt;h2&gt;Clients&lt;/h2&gt;
+&lt;p&gt;ZooKeeper clients can connect to any of the ensemble members and maintain a connection.&lt;/p&gt;
+&lt;p&gt;ZooKeeper is build on Java, but there is a pretty &lt;a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/ZKClientBindings"&gt;solid list&lt;/a&gt; of client bindings,
+including Java, Scala, Node.js, Erlang, Haskell, Python, C#, Go and Ruby.&lt;/p&gt;
+&lt;p&gt;The most popular client is &lt;a href="http://curator.apache.org/"&gt;Apache Curator&lt;/a&gt; (former LinkedIn project).
+Definitely checkout the &lt;a href="http://curator.apache.org/curator-recipes/index.html"&gt;Curator support for high-level recipes&lt;/a&gt;,
+it's a very interesting read.&lt;/p&gt;
+&lt;h2&gt;Use-cases&lt;/h2&gt;
+&lt;p&gt;Here is a couple of examples how ZooKeeper is used in practice:&lt;/p&gt;
+&lt;p&gt;Twitter uses ZooKeeper for &lt;strong&gt;service discovery&lt;/strong&gt;. Each application instance
+registers itself to ZooKeeper using an ephemeral z-node. In this way,
+ZooKeeper can maintain an up-to-date list of running instances for each type of service.
+Clients then query ZooKeeper to locate application instances.
+In general, ZooKeeper might help you to build a
+&lt;strong&gt;micro-service infrastructure&lt;/strong&gt; or manage a network of &lt;strong&gt;replicated
+(REST) services&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://lucene.apache.org/solr/"&gt;Apache Solr&lt;/a&gt; uses ZooKeeper for &lt;strong&gt;leader election, centralized configuration&lt;/strong&gt; and &lt;strong&gt;cluster management&lt;/strong&gt;. ZooKeeper enables application servers to &lt;strong&gt;bootstrap configuration&lt;/strong&gt;
+from ZooKeeper as soon as they join the system and to keep the configuration up-to-date.&lt;/p&gt;
+&lt;p&gt;Cluster monitoring can be implemented as members registering to &lt;code&gt;/members/host-{i}&lt;/code&gt; and
+periodically updating the z-node with their status (load, memory, CPU etc). Each z-node update
+then triggers an alert to z-node listeners using watches.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://www.google.cz/search?q=apache+kafka&amp;amp;rlz=1C5CHFA_enCZ546CZ546&amp;amp;oq=apache+kafka&amp;amp;aqs=chrome..69i57j69i59l2j0l3.1551j0j9&amp;amp;sourceid=chrome&amp;amp;es_sm=91&amp;amp;ie=UTF-8"&gt;Apache Kafka&lt;/a&gt;, a popular publish/subscribe system with persistent queues,
+uses ZooKeeper to store client's last consumed
+offset, to register Kafka brokers and to help load balance requests among live brokers.&lt;/p&gt;
+&lt;p&gt;&lt;a href="http://hadoop.apache.org/"&gt;Apache Hadoop&lt;/a&gt; uses ZooKeeper for automatic failover of Hadoop HDFS Namenode and for high-availability of YARN resources.&lt;/p&gt;
+&lt;p&gt;Pretty amazing!&lt;/p&gt;
+&lt;h2&gt;Where to go from here&lt;/h2&gt;
+&lt;p&gt;I was quite eager to experiment with the ensemble, so I made
+this &lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;automated script&lt;/a&gt; which creates and provision a virtual 3-node ensemble on your local machine with one command using Vagrant and Ansible. &lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;Check it out&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Also, if you want to dive deeper, I'd recommend to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Read the &lt;a href="http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html"&gt;Getting started guide &lt;/a&gt; on the official ZooKeeper website&lt;/li&gt;
+&lt;li&gt;Checkout the &lt;a href="http://zookeeper.apache.org/doc/trunk/recipes.html"&gt;Zookeeper recipies&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Bookmark the &lt;a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/ZooKeeperPresentations"&gt;curated list of Zookeeper presentations&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Read a use-case of &lt;a href="http://blog.cloudera.com/blog/2009/05/building-a-distributed-concurrent-queue-with-apache-zookeeper/"&gt;building a distributed concurrent queue in Zookeeper&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Checkout &lt;a href="http://www.ebaytechblog.com/2012/09/13/grid-computing-with-fault-tolerant-actors-and-zookeeper/#.VKLmpsAAE"&gt;Grid Computing with Fault-Tolerant Actors and ZooKeeper&lt;/a&gt; - eBay tech blog&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Happy ZooKeeping!&lt;/strong&gt;&lt;/p&gt;</summary><category term="apache zookeeper"></category><category term="hadoop"></category><category term="kafka"></category></entry><entry><title>Analyze your Elastic MapReduce data with Python, Pandas and scikit-learn</title><link href="/how-to-wire-pandas-to-impala.html" rel="alternate"></link><published>2014-08-04T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:,2014-08-04:how-to-wire-pandas-to-impala.html</id><summary type="html">&lt;p&gt;What a great time it is nowadays for data geeks!&lt;/p&gt;
+&lt;p&gt;We have Pandas and Scikit-learn - fantastic Python stack for data analysis. On top of that we have IPython and IPython Notebook - powerful coding, documentation and visualization layer for experimenting.&lt;/p&gt;
+&lt;p&gt;Then we have the whole Hadoop stack with an amazingly fast Impala SQL query engine. We don't even have to build the Hadoop cluster in-house, we just choose the size and spin up a cluster via Amazon AWS and we're done.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;And now guys in Cloudera made &lt;a href="https://github.com/cloudera/impyla"&gt;Impyla&lt;/a&gt; - Python connector to Impala.&lt;/strong&gt; And of course, they didn't forget to pack in an Impala connector for Pandas! How great is that?!&lt;/p&gt;
+&lt;p&gt;So, if you want to connect Pandas to Impala on Elastic MapReduce (EMR), here is how.&lt;/p&gt;
+&lt;h2&gt;5 steps to connect Pandas to remote Impala&lt;/h2&gt;
+&lt;h3&gt;Prerequisites&lt;/h3&gt;
+&lt;p&gt;Install the awesome Pandas, Scikit-learn and IPython stack if you haven't done that already.&lt;/p&gt;
+&lt;h3&gt;Step 1: Install Impyla&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ pip install impyla
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Step 2: Create an SSH tunnel to Amazon EMR so you can access Impala from localhost&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ ssh -L 12345:localhost:21050 your_user_name@your_node.compute.amazonaws.com
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The Impala query engine runs on port 21050 on your Hadoop master node. For security reasons, this port is not accessible from the outside.&lt;/p&gt;
+&lt;p&gt;This shell command will open up the port 12345 on your local machine and forward it to the port 21050 on the Hadoop master node where the Impala query engine listens. (Of course, you can choose whatever port you want, it doesn't have to be 12345.)&lt;/p&gt;
+&lt;h3&gt;Step 3: Connect Impyla to Impala via the tunnel&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;impala.dbapi&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;connect&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;conn&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;connect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;localhost&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;12345&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;cur&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;conn&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cursor&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Notice that we are connecting to &lt;code&gt;localhost:12345&lt;/code&gt; which is (securely) forwarded to Impala on Amazon EMR.&lt;/p&gt;
+&lt;h3&gt;Step 4: Query Impala and convert the result into Pandas dataframe&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;impala.util&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;as_pandas&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;cur&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execute&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;SELECT * FROM customers LIMIT 500&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;df&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;as_pandas&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cur&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Note that the query result must be transported from remote cluster to your localhost. If the result is large, the download might take a while. You might want to check out the network traffic monitor on your system to see when the download is complete.&lt;/p&gt;
+&lt;h3&gt;Step 5. Enjoy Hadoop data in Pandas&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;sklearn.ensemble&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;RandomForestClassifier&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;clf&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;RandomForestClassifier&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;n_estimators&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;clf&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;df&lt;/span&gt;&lt;span class="p"&gt;[[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;age&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;gender&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]],&lt;/span&gt; &lt;span class="n"&gt;df&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;lifetime_value&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Bonus: Impala with scikit-learn API&lt;/h2&gt;
+&lt;p&gt;By the way, guys at Cloudera are now busy with implementing scikit-learn API in Impyla. They &lt;a href="http://blog.cloudera.com/blog/2014/04/a-new-python-client-for-impala/"&gt;already have&lt;/a&gt; alpha implementation of linear regression, logistic regression and SVM ready. I'm quite excited where all this is going...&lt;/p&gt;</summary><category term="pandas"></category><category term="scikit"></category><category term="impala"></category><category term="aws"></category></entry><entry><title>How to automatically detect random text in web registration forms</title><link href="/random-word-detector.html" rel="alternate"></link><published>2014-07-22T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:,2014-07-22:random-word-detector.html</id><summary type="html">&lt;p&gt;I came across an interesting problem a couple of days ago. A friend of mine runs quite a large website with a lot of users registering on their web. The problem is that there are users which are lazy to enter proper information so they just enter random text, as this for example:&lt;/p&gt;
+&lt;p&gt;&lt;img alt="Example of randomly typed words" src="/images/random-text.png" /&gt;&lt;/p&gt;
+&lt;p&gt;Since the correct registration information is crucial to their business, he would like to have a solution which would detect such random text automatically.&lt;/p&gt;
+&lt;p&gt;It would be very useful for him to have a tool which would check all data gathered from registration forms and mark rows which look like  random text. He calls this &lt;em&gt;false user registrations&lt;/em&gt;. Also, it would be interesting to have an online detector which would notify the customer-care team if such a false registration is submitted.&lt;/p&gt;
+&lt;p&gt;Although there are many approaches to this problem, I was curious if such problem can be solved algorithmically. In particular, &lt;strong&gt;I was curious what would be the most simple solution that would be useful in 80% of the cases.&lt;/strong&gt; The reason is that when I am presented with a (data) problem, I always find it very effective to start with the most simple solution first. And often these solutions turn out to be satisfactory enough.&lt;/p&gt;
+&lt;p&gt;Anyway, I was first tempted to go with supervised algorithms, like Naive Bayes classifier for example. However, I realized that it would be much more interesting to come up with an unsupervised algorithm, which would identify random words automatically without any prior knowledge. &lt;strong&gt;Just give the algorithm a list of words and it gives you back words from the list which look random.&lt;/strong&gt; Such solution would also be practical from the business perspective since you can immediately identify suspicious registrations in a sea of production data.&lt;/p&gt;
+&lt;p&gt;So here is a description of a very simple - yet surprisingly effective -  unsupervised solution to this challenge. Based on frequency-analysis of character bigrams.&lt;/p&gt;
+&lt;h2&gt;Before we dive in, let's the see results&lt;/h2&gt;
+&lt;p&gt;For the sake of simplicity, I focused on the field of the registration form that contains a customer name. To mock up production data, I took the 2000 most common names in US and added 20 random texts on top of the list. I got &lt;a href="https://raw.githubusercontent.com/mkrcah/random-text-detector/master/data/names-input.txt"&gt;this list of words&lt;/a&gt;, which I gave as input to the algorithm. (The order of words doesn't matter.)&lt;/p&gt;
+&lt;p&gt;What the algorithm does is to compute a &lt;em&gt;suspicious score&lt;/em&gt; for each word. The higher the score, the more suspicious (i.e. random) the word looks when compared to the rest of the words.&lt;/p&gt;
+&lt;p&gt;If you run the algorithm, you get &lt;a href="https://raw.githubusercontent.com/mkrcah/random-text-detector/master/data/names-output-adjusted-idf.txt"&gt;this list of words sorted by a suspicious score&lt;/a&gt;. I marked the 20 random words with an asterix, so I can quickly evaluate quality of the result.&lt;/p&gt;
+&lt;p&gt;We see that the algorithm is pretty effective: &lt;strong&gt;the top 10 words with the highest suspicious score (above 25.0) consist of random words only.&lt;/strong&gt; Actually, the top 16 words consist of 15 random words and only one regular name - &lt;em&gt;guadalupe&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;The five random words which didn't make it to the top 20 include &lt;em&gt;tyrwereh&lt;/em&gt; (#23), &lt;em&gt;qwerpo&lt;/em&gt; (#43) and &lt;em&gt;sfert&lt;/em&gt; (#422). However, I'm ok with the low scores here, because these words don't look very random to me anyway :)&lt;/p&gt;
+&lt;p&gt;I have made also an interactive version of the algorithm, it is &lt;a href="http://random-text-detector.herokuapp.com"&gt;available here&lt;/a&gt;. Go ahead and give it a try. &lt;em&gt;(Note that it might take up to 10 seconds to load the page because the Heroku node might need to wake up.)&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;How it works&lt;/h2&gt;
+&lt;p&gt;If you look at a random word, e.g. &lt;em&gt;sdfjtwd&lt;/em&gt;, you see a lot of rare combinations of characters like  &lt;em&gt;sd&lt;/em&gt; or &lt;em&gt;ft&lt;/em&gt; or &lt;em&gt;jt&lt;/em&gt;. If you look at a  word &lt;em&gt;dustin&lt;/em&gt;, there is no combination of characters which strikes you are rare. Maybe &lt;em&gt;st&lt;/em&gt;, but that's about it.&lt;/p&gt;
+&lt;p&gt;A combination of two adjacent characters in a word is called a character bigram. So &lt;em&gt;sd&lt;/em&gt;, &lt;em&gt;ft&lt;/em&gt; and &lt;em&gt;jt&lt;/em&gt; are all bigrams of the word &lt;em&gt;sdfjtwd&lt;/em&gt;. (By the way, there are also &lt;em&gt;word-bigrams&lt;/em&gt; which are adjacent words in a sentence.)&lt;/p&gt;
+&lt;p&gt;What you want to do to detect random text is the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Compute a score for each bigram. This score should be high if the bigram is rare among all given words. The score should be low if the bigram is very common among given words.&lt;/li&gt;
+&lt;li&gt;Compute suspicious score of a given word as a sum of all bigram scores that are contained in the word.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;Step 1 - Compute bigram scores&lt;/h2&gt;
+&lt;p&gt;Consider the words &lt;em&gt;aabaa&lt;/em&gt;, &lt;em&gt;abbb&lt;/em&gt; and &lt;em&gt;ababa&lt;/em&gt; for example. Let's compute for each bigram how many times it occurs in each word and also how many words in total contain this bigram:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Word / Bigram&lt;/th&gt;
+&lt;th&gt;aa&lt;/th&gt;
+&lt;th&gt;ab&lt;/th&gt;
+&lt;th&gt;ba&lt;/th&gt;
+&lt;th&gt;bb&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;aabaa&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;abb&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ababa&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Total words containing the bigram&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;1&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;3&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;2&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;1&lt;/strong&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;We see that the bigram &lt;em&gt;aa&lt;/em&gt; occurs twice in the word &lt;em&gt;aabaa&lt;/em&gt;, while bigram &lt;em&gt;bb&lt;/em&gt; doesn't occur at all in &lt;em&gt;aabaa&lt;/em&gt;. Also, we see that the bigram &lt;em&gt;ab&lt;/em&gt; is the most common bigram (used in all 3 words) and the bigrams &lt;em&gt;aa&lt;/em&gt; and &lt;em&gt;bb&lt;/em&gt; are the most rare (used only in one word).&lt;/p&gt;
+&lt;p&gt;Now we know which bigrams are rare and which are common in the dataset. We just need to translate it into a score.&lt;/p&gt;
+&lt;p&gt;The most popular metric for this purpose is the &lt;a href="http://en.wikipedia.org/wiki/Tf–idf"&gt;inverse document frequency (IDF)&lt;/a&gt;. For a given bigram &lt;span class="math"&gt;\(b\)&lt;/span&gt;, the IDF is computed as&lt;/p&gt;
+&lt;div class="math"&gt;$$ \{IDF}(b) = \log\frac{N}{n_b}, $$&lt;/div&gt;
+&lt;p&gt;where &lt;span class="math"&gt;\(N\)&lt;/span&gt; is the total number of words (in our case &lt;span class="math"&gt;\(N=3\)&lt;/span&gt;), and &lt;span class="math"&gt;\(n_b\)&lt;/span&gt; is the number of words which contain the bigram &lt;span class="math"&gt;\(b\)&lt;/span&gt;.&lt;/p&gt;
+&lt;p&gt;In our example of words &lt;em&gt;aabaa&lt;/em&gt;, &lt;em&gt;abbb&lt;/em&gt; and &lt;em&gt;ababa&lt;/em&gt;, the IDFs are as follows:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&amp;nbsp;&lt;/th&gt;
+&lt;th&gt;aa&lt;/th&gt;
+&lt;th&gt;ab&lt;/th&gt;
+&lt;th&gt;ba&lt;/th&gt;
+&lt;th&gt;bb&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;span class="math"&gt;\(n_b\)&lt;/span&gt;&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;3&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;span class="math"&gt;\(\{IDF}(b)\)&lt;/span&gt;&lt;/td&gt;
+&lt;td&gt;1.1&lt;/td&gt;
+&lt;td&gt;0.0&lt;/td&gt;
+&lt;td&gt;0.4&lt;/td&gt;
+&lt;td&gt;1.1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;This is exactly what we need: The most common bigram (&lt;em&gt;ab&lt;/em&gt;) has zero IDF, while the most rare bigrams (&lt;em&gt;aa&lt;/em&gt; and &lt;em&gt;bb&lt;/em&gt;) have highest IDF.&lt;/p&gt;
+&lt;p&gt;By the way, to see the IDFs of all bigrams from our data of 2020 words, click &lt;a href="https://raw.githubusercontent.com/mkrcah/random-text-detector/master/data/names-idf-standard.txt"&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Step 2 - Sum up bigram scores&lt;/h2&gt;
+&lt;p&gt;To get the suspicious score for a given word, we just need to sum up IDFs of all bigrams occurring in a word:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Word / Bigram&lt;/th&gt;
+&lt;th&gt;aa&lt;/th&gt;
+&lt;th&gt;ab&lt;/th&gt;
+&lt;th&gt;ba&lt;/th&gt;
+&lt;th&gt;bb&lt;/th&gt;
+&lt;th&gt;Suspicious score (sum of IDFs)&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;aabaa&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;2.6&lt;/strong&gt; = 2 * 1.1 + 1 * 0.0 + 1 * 0.4&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;abb&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;1&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;1.1&lt;/strong&gt; = 1 * 0.0 + 1 * 1.1&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ababa&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;2&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;0.8&lt;/strong&gt; = 2 * 0.0 + 2 * 0.4&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;IDF&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;1.1&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;0.0&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;0.4&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;strong&gt;1.1&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;We see that the word &lt;em&gt;aabaa&lt;/em&gt; with a score of 2.6 is the most suspicious word out of our fabricated example.&lt;/p&gt;
+&lt;p&gt;If you use this algorithm to compute suspicious score on our 2020 words, you get &lt;a href="https://raw.githubusercontent.com/mkrcah/random-text-detector/master/data/names-output-standard-idf.txt"&gt;this result&lt;/a&gt;. Looks ok, but take a look at positions #9, #11 and #13. &lt;em&gt;Christopher&lt;/em&gt; and &lt;em&gt;Jefferson&lt;/em&gt; are regular names but they have very high suspicious scores (e.g. higher than &lt;em&gt;lkjwqer&lt;/em&gt;, &lt;em&gt;erwtrepo&lt;/em&gt; and others).&lt;/p&gt;
+&lt;p&gt;Can we improve the algorithm?&lt;/p&gt;
+&lt;h2&gt;Improve the algorithm with adjusted-IDF&lt;/h2&gt;
+&lt;p&gt;The problem with &lt;em&gt;Christpoher&lt;/em&gt; or &lt;em&gt;Jefferson&lt;/em&gt; is that they are long and contain a lot of common bigrams. The sum of IDFs of these common bigrams is higher that the sum of IDFs of fewer but more rare bigrams.&lt;/p&gt;
+&lt;p&gt;To overcome this, we can adjust the IDF formula to return lower score for common bigrams. One of many possible options is to use the following formula:&lt;/p&gt;
+&lt;div class="math"&gt;$$ \text{IDF}_\{adj}(b) = \log\frac{\max_c(n_c)}{n_b}, $$&lt;/div&gt;
+&lt;p&gt;where the &lt;span class="math"&gt;\(\max_c(n_c)\)&lt;/span&gt; term is just the number of occurrences of the most common bigram. Using this formula, the bigram score should be zero for the most common bigram and almost zero for very common bigrams.&lt;/p&gt;
+&lt;p&gt;To see the adjusted-IDFs for the bigram in our sample of 2020 words, click &lt;a href="https://raw.githubusercontent.com/mkrcah/random-text-detector/master/data/names-idf-adjusted.txt"&gt;here&lt;/a&gt;. You can see that scores of very common bigrams decreased from 2.5 to 0.5, while the score of most rare bigram remain above 5. &lt;em&gt;(You can experiment and tweak this formula more in order to fit your data. Apart from logarithm, you might also consider &lt;a href="http://en.wikipedia.org/wiki/Exponential_distribution"&gt;different  functions&lt;/a&gt;)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The adjusted-IDF is the score that I used to arrive at the &lt;a href="https://github.com/mkrcah/random-text-detector/raw/master/data/names-output-adjusted-idf.txt"&gt;results&lt;/a&gt; presented in the beginning of the article.&lt;/p&gt;
+&lt;h2&gt;Grab the source code here&lt;/h2&gt;
+&lt;p&gt;I put the source code (Scala) on &lt;a href="https://github.com/mkrcah/random-text-detector"&gt;github&lt;/a&gt;. It tried to make it simple to get the tool up and running on your local machine (either in batch-mode or in server-mode with API). Also, it should be possible to deploy code to &lt;a href="http://random-text-detector.herokuapp.com"&gt;Heroku&lt;/a&gt; without any code changes.&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</summary><category term="machine learning"></category></entry><entry><title>Stop coding, ignore that quench.</title><link href="/quench.html" rel="alternate"></link><published>2000-01-03T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:,2000-01-03:quench.html</id><summary type="html">&lt;p&gt;We, software engineers, love to build.&lt;/p&gt;
+&lt;p&gt;The thrilling sensation of adding a feature or creating something new from scratch. The excitement of using the latest technology that we've been reading about on Hacker News for so long.&lt;/p&gt;
+&lt;p&gt;And thus, we build.&lt;/p&gt;
+&lt;p&gt;We dive into coding, into architecture, into design. Quenching another dose of the thrill.&lt;/p&gt;
+&lt;p&gt;I am guilty of this.&lt;/p&gt;
+&lt;p&gt;Yet, I came to believe that blindly following the quench is by far the largest productivity killer. I believe that coding should be considered the very last resort, used only when all other options are exhausted.&lt;/p&gt;
+&lt;p&gt;Let me explain.&lt;/p&gt;
+&lt;p&gt;Development is very expensive. It takes long to finish. It requires future time investment. It requires maintenance and bug fixes. There is opportunity cost. And there is a possibility that our work won't be used in production, because the priorities have shifted.&lt;/p&gt;
+&lt;p&gt;No matter the team, the agile process or the technology stack, the development will always be this way - resource intensive. Coding slows down the company, drains the IT budget and creates technical debt for future.&lt;/p&gt;
+&lt;p&gt;So before blindly jumping into coding, take a step back. Understand arguments why the problem or the feature at hand needs to be build in the first place. Find if there is way to simplify the problem. Find if there is an existing solution in-house or off-the-shelf that can be reused to solve it.&lt;/p&gt;
+&lt;p&gt;Fight that internal quench as much as possible.&lt;/p&gt;
+&lt;p&gt;Only as the very last resort, only when all other options fail, start thinking about the very minimal coding solution to the problem you have.&lt;/p&gt;
+&lt;p&gt;And, very cautiously, take that first sip.&lt;/p&gt;</summary></entry><entry><title>Strive for focus, strive for simplicity</title><link href="/focus.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:,2000-01-02:focus.html</id><summary type="html">&lt;p&gt;I believe that one of the reasons why companies fail is a lack of focus and fear of simplicity. They focus on too many things at once. Have too many legacy customers. Want to squeeze dollars from &lt;em&gt;every&lt;/em&gt; opportunity possible.&lt;/p&gt;
+&lt;p&gt;Doing everything yet doing nothing properly.&lt;/p&gt;
+&lt;p&gt;I believe this is a road to disaster.&lt;/p&gt;
+&lt;p&gt;I have seen this multiple times.&lt;/p&gt;
+&lt;p&gt;Processes get complicated. IT development slows down. Products get harder to understand. More people are needed to handle the newly created complexity.&lt;/p&gt;
+&lt;h2&gt;Example 1: Building a generic solution instead of pushing for simplicity&lt;/h2&gt;
+&lt;p&gt;Once, my team was given a task to build a generic pricing rule engine. The engine was supposed to support all the current and legacy business deals. Since the company had been lacking focus, the pricing had gotten out of hand. It got so complex that there was only one person in the whole company who understood the pricing intricacies completely. He tried to explain it to us many times, but the complexity was overwhelming. There were exceptions everywhere.&lt;/p&gt;
+&lt;p&gt;We should have paused and &lt;a href="/quench"&gt;not follow the quench&lt;/a&gt;. We should have pushed back to remove as much exceptions as possible. To simplify our pricing model.&lt;/p&gt;
+&lt;p&gt;This way, all parties would win:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Pricing would be easy to explain and simple to understand.&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://en.wikipedia.org/wiki/Bus_factor"&gt;Bus-factor&lt;/a&gt; would increase.&lt;/li&gt;
+&lt;li&gt;Development would be quicker.&lt;/li&gt;
+&lt;li&gt;Processes would streamline.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Instead, we have built the engine. It sure brought advantages. However, I believe that removing the root cause would bring benefits of another level.&lt;/p&gt;
+&lt;h2&gt;Example 2: Expanding B2B product with B2C capabilities&lt;/h2&gt;
+&lt;p&gt;Another time, another team. We were given a task to expand our B2B platform with B2C capabilities. The overlap between B2B and B2C features were minimal.  The B2B platform was hardly stable.&lt;/p&gt;
+&lt;p&gt;We &lt;a href="/quench"&gt;followed the quench&lt;/a&gt;. Again. And things got very complex very quickly.&lt;/p&gt;
+&lt;p&gt;We were very slow. Discussions. Hacks.&lt;/p&gt;
+&lt;p&gt;It felt like fitting a circle in a square.&lt;/p&gt;
+&lt;p&gt;Instead, we should have focused on two things: polishing the B2B platform and start a green-field B2C product.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The development would be faster&lt;/li&gt;
+&lt;li&gt;Our end-users would understand the products easier.&lt;/li&gt;
+&lt;li&gt;We would end up in two &lt;a href="http://stackoverflow.com/questions/3085285/cohesion-coupling"&gt;loosely-coupled yet highly-cohesive&lt;/a&gt; products.&lt;/li&gt;
+&lt;li&gt;Oh, and we would enjoy the hell out of it!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Strive for focus and simplicity&lt;/h2&gt;
+&lt;p&gt;Choose one thing and be the best at it. Stop marginal legacy business lines. Refuse niche requests from small customers. Simplify as much as possible.&lt;/p&gt;
+&lt;p&gt;Only when the product is saturated, expand. Do it with sharp focus. Create another product which will be the best at what it offers.&lt;/p&gt;
+&lt;p&gt;Simplify and keep focused!&lt;/p&gt;</summary></entry><entry><title>How not to do big-data</title><link href="/big-data-lessons.html" rel="alternate"></link><published>2000-01-01T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:,2000-01-01:big-data-lessons.html</id><summary type="html">&lt;p&gt;I was very excited when I joined a colleague on a project to build The Big Data Platform. Finally, I could play with all the cool technologies that everybody was talking about. No more tiresome evening hours. This time a full-time throttle.&lt;/p&gt;
+&lt;h2&gt;Journey begins&lt;/h2&gt;
+&lt;p&gt;We did everything according to the book.&lt;/p&gt;
+&lt;p&gt;We built a powerful and fast data warehouse. It unified all our databases in one place with an exploratory user interface on top. We delivered an ETL pipeline which cleaned the source data and combined them in a novel way. We were on the bleeding-edge: multi-node Hadoop cluster, Impala, Spark, Sqoop, Hue. Along the way, we created &lt;a href="https://github.com/datadudes"&gt;open-source tooling&lt;/a&gt; that we lacked in the standard stack.&lt;/p&gt;
+&lt;p&gt;It was amazing!&lt;/p&gt;
+&lt;p&gt;It was several months until we finished the technical part.&lt;/p&gt;
+&lt;p&gt;I was happy with our deliverable. The management was also satisfied: we were &lt;em&gt;"finally doing the big-data"&lt;/em&gt;. Colleagues were happy - we taught them SQL and gave them a tool to explore data on their own. We had several insightful reports in place and a few interesting ideas on our own on how to continue.&lt;/p&gt;
+&lt;h2&gt;And then it hit us.&lt;/h2&gt;
+&lt;p&gt;The emptiness.&lt;/p&gt;
+&lt;p&gt;The "Now what?" question.&lt;/p&gt;
+&lt;p&gt;The limbo of how to use our new baby for the business purposes.&lt;/p&gt;
+&lt;p&gt;Our own ideas about how to continue didn't feel quite right. The team had much more pressing projects in the pipeline. Pursuit of our ideas felt like a luxury.&lt;/p&gt;
+&lt;p&gt;I realized that we have ended up with a very expensive high-maintenance and complex toy that didn't justify its existence.&lt;/p&gt;
+&lt;p&gt;For large part, we chased technology instead of solving a problem as quickly and efficiently as possible.&lt;/p&gt;
+&lt;h2&gt;Lesson learned&lt;/h2&gt;
+&lt;p&gt;This is what we should have done:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;First, &lt;a href="/quench"&gt;ignore the quench&lt;/a&gt;&lt;/strong&gt;. Clear the mind from any technology-related thrills.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Find a problem, before jumping into solution.&lt;/strong&gt; Talk in person to every stakeholder who might benefit from data-related answers. Deeply understand these opportunities and formulate them as explicitly as possible. Compose a prioritized list of data questions that the company strives for.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Build a very minimal solution&lt;/strong&gt; which would answer the highest priority question. It might be as simple as a SQL query over existing database. Or an &lt;a href="https://ipython.org/"&gt;IPython&lt;/a&gt; notebook with a machine-learning protype. Or just a simple Google Spreasheet. Don't underestimate the power of simple tools. Resist code development as much as possible. Don't automate. Focus on validation.&lt;/li&gt;
+&lt;li&gt;Only if the solution is validated and these "boring" technologies do not suffice anymore, start carefully considering a beast like Hadoop and Spark.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This way, you won't hit a roadblock like we did.&lt;/p&gt;
+&lt;p&gt;Instead, you will deliver a high-quality and spot-on solution. And the thrill from business impact would be much better that the thrill from the technology.&lt;/p&gt;</summary></entry></feed>
