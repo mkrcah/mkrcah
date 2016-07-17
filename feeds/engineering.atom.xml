@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/engineering.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2000-01-03T00:00:00+01:00</updated><entry><title>Stop coding, ignore that quench.</title><link href="http://marcel.is/quench.html" rel="alternate"></link><published>2000-01-03T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-03:quench.html</id><summary type="html">&lt;p&gt;We, software engineers, love to build.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/engineering.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2000-01-03T00:00:00+01:00</updated><entry><title>Resist the quench for coding.</title><link href="http://marcel.is/quench.html" rel="alternate"></link><published>2000-01-03T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-03:quench.html</id><summary type="html">&lt;p&gt;We, software engineers, love to build.&lt;/p&gt;
 &lt;p&gt;The thrilling sensation of adding a feature or creating something new from scratch. The excitement of using the latest technology that we've been reading about on Hacker News for so long.&lt;/p&gt;
 &lt;p&gt;And thus, we build.&lt;/p&gt;
 &lt;p&gt;We dive into coding, into architecture, into design. Quenching another dose of the thrill.&lt;/p&gt;
 &lt;p&gt;I am guilty of this.&lt;/p&gt;
-&lt;p&gt;Yet, I came to believe that blindly following the quench is by far the largest productivity killer. I believe that coding should be considered the very last resort, used only when all other options are exhausted.&lt;/p&gt;
+&lt;p&gt;Yet, I came to believe that blindly following the thirst is by far the largest productivity killer. I believe that coding should be considered the very last resort, used only when all other options are exhausted.&lt;/p&gt;
 &lt;p&gt;Let me explain.&lt;/p&gt;
 &lt;p&gt;Development is very expensive. It takes long to finish. It requires future time investment. It requires maintenance and bug fixes. There is opportunity cost. And there is a possibility that our work won't be used in production, because the priorities have shifted.&lt;/p&gt;
 &lt;p&gt;No matter the team, the agile process or the technology stack, the development will always be this way - resource intensive. Coding slows down the company, drains the IT budget and creates technical debt for future.&lt;/p&gt;
-&lt;p&gt;So before blindly jumping into coding, take a step back. Understand arguments why the problem or the feature at hand needs to be build in the first place. Find if there is way to simplify the problem. Find if there is an existing solution in-house or off-the-shelf that can be reused to solve it.&lt;/p&gt;
-&lt;p&gt;Fight that internal quench as much as possible.&lt;/p&gt;
+&lt;p&gt;So before blindly jumping into coding, take a step back. Understand arguments why the problem or the feature at hand needs to be build in the first place. Find if there is a way to simplify the problem. Find if there is an existing solution in-house or off-the-shelf that can be reused to solve it.&lt;/p&gt;
+&lt;p&gt;Fight that internal thirst as much as possible.&lt;/p&gt;
 &lt;p&gt;Only as the very last resort, only when all other options fail, start thinking about the very minimal coding solution to the problem you have.&lt;/p&gt;
 &lt;p&gt;And, very cautiously, take that first sip.&lt;/p&gt;</summary></entry><entry><title>Strive for focus, strive for simplicity</title><link href="http://marcel.is/focus.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-02:focus.html</id><summary type="html">&lt;p&gt;I believe that one of the reasons why companies fail is a lack of focus and fear of simplicity. They focus on too many things at once. Have too many customer-specific features and processes. Want to squeeze a dollar from &lt;em&gt;every&lt;/em&gt; opportunity possible, not realizing the incurred debt.&lt;/p&gt;
 &lt;p&gt;Doing everything yet doing nothing properly.&lt;/p&gt;
@@ -18,7 +18,7 @@
 &lt;p&gt;Processes get complicated. IT development slows down. Products get harder to understand. More people are needed to handle the newly created complexity.&lt;/p&gt;
 &lt;h2&gt;Example 1: Building a generic solution instead of pushing for simplicity&lt;/h2&gt;
 &lt;p&gt;Once, my team was given a task to build a generic pricing rule engine. The engine was supposed to support all the current and legacy business deals. Since the company had been lacking focus, the pricing had gotten out of hand. It got so complex that there was only one person in the whole company who understood the pricing intricacies completely. He tried to explain it to us many times, but the complexity was overwhelming. There were exceptions everywhere.&lt;/p&gt;
-&lt;p&gt;We should have paused and &lt;a href="/quench"&gt;not follow the quench&lt;/a&gt;. We should have pushed back to remove as much exceptions as possible. To simplify our pricing model.&lt;/p&gt;
+&lt;p&gt;We should have paused and &lt;a href="/quench"&gt;not ignore the quenching&lt;/a&gt;. We should have pushed back to remove as much exceptions as possible. To simplify our pricing model.&lt;/p&gt;
 &lt;p&gt;This way, all parties would win:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Pricing would be easy to explain and simple to understand.&lt;/li&gt;
@@ -28,8 +28,8 @@
 &lt;/ul&gt;
 &lt;p&gt;Instead, we have built the engine. It sure brought advantages. However, I believe that removing the root cause would bring benefits of another level.&lt;/p&gt;
 &lt;h2&gt;Example 2: Expanding B2B product with B2C capabilities&lt;/h2&gt;
-&lt;p&gt;Another time, another team. We were given a task to expand our B2B platform with B2C capabilities. The overlap between B2B and B2C features were minimal.  The B2B platform was hardly stable.&lt;/p&gt;
-&lt;p&gt;We &lt;a href="/quench"&gt;followed the quench&lt;/a&gt;. Again. And things got very complex very quickly.&lt;/p&gt;
+&lt;p&gt;Another time, another team. We were given a task to expand our &lt;a href="https://en.wikipedia.org/wiki/Business-to-business"&gt;B2B&lt;/a&gt; platform with &lt;a href="https://en.wikipedia.org/wiki/Retail"&gt;B2C&lt;/a&gt; capabilities. The overlap between B2B and B2C features were minimal.  The B2B platform was hardly stable.&lt;/p&gt;
+&lt;p&gt;We &lt;a href="/quench"&gt;followed the thirst&lt;/a&gt;. Again. And things got very complex very quickly.&lt;/p&gt;
 &lt;p&gt;We were very slow. Discussions. Hacks.&lt;/p&gt;
 &lt;p&gt;It felt like fitting a circle in a square.&lt;/p&gt;
 &lt;p&gt;Instead, we should have focused on two things: polishing the B2B platform and start a green-field B2C product.&lt;/p&gt;
@@ -54,13 +54,14 @@
 &lt;p&gt;The "Now what?" question.&lt;/p&gt;
 &lt;p&gt;Our own ideas about how to continue didn't feel quite right. The team had much more pressing projects in the pipeline. Pursuit of our ideas felt like a luxury.&lt;/p&gt;
 &lt;p&gt;I realized that we have ended up with a very expensive high-maintenance and complex toy that didn't justify its existence.&lt;/p&gt;
+&lt;p&gt;I felt we could have achieved the same result much faster with a more "boring" technological stack.&lt;/p&gt;
 &lt;p&gt;For large part, we chased technology instead of solving a problem as quickly and efficiently as possible.&lt;/p&gt;
 &lt;h2&gt;Lesson learned&lt;/h2&gt;
 &lt;p&gt;This is what we should have done:&lt;/p&gt;
 &lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;First, &lt;a href="/quench"&gt;ignore the quench&lt;/a&gt;&lt;/strong&gt;. Clear the mind from any technology-related thrills.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;First, &lt;a href="/quench"&gt;ignore the thirst&lt;/a&gt;&lt;/strong&gt;. Clear the mind from any technology-related thrills.&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;Find a problem, before jumping into solution.&lt;/strong&gt; Talk in person to every stakeholder who might benefit from data-related answers. Deeply understand these opportunities and formulate them as explicitly as possible. Compose a prioritized list of data questions that the company strives for.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Build a very minimal solution&lt;/strong&gt; which would answer the highest priority question. It might be as simple as a SQL query over existing database. Or an &lt;a href="https://ipython.org/"&gt;IPython&lt;/a&gt; notebook with a machine-learning prototype. Or just a simple Google Spreasheet. Don't underestimate the power of simple tools. Resist code development as much as possible. Don't automate. Focus on validation.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Build a very minimal solution&lt;/strong&gt; which would answer the highest priority question. It might be as simple as a SQL query over existing database. Or an &lt;a href="https://ipython.org/"&gt;IPython&lt;/a&gt; notebook with a machine-learning prototype. Or just a simple Google Spreadsheet. Don't underestimate the power of simple tools. Resist code development as much as possible. Don't automate. Focus on validation.&lt;/li&gt;
 &lt;li&gt;Only if the solution is validated and these "boring" technologies do not suffice anymore, start carefully considering a beast like Hadoop and Spark.&lt;/li&gt;
 &lt;/ol&gt;
 &lt;p&gt;This way, you won't hit a roadblock like we did.&lt;/p&gt;
