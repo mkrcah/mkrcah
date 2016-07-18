@@ -1,5 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/all.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2015-05-05T00:00:00+02:00</updated><entry><title>How a newline can ruin your Hive</title><link href="http://marcel.is/how-newline-can-ruin-your-hive.html" rel="alternate"></link><published>2015-05-05T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2015-05-05:how-newline-can-ruin-your-hive.html</id><summary type="html">&lt;p&gt;If you do not fully understand how Hive/Impala stores your data, it might cost you badly.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/all.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-07-19T00:00:00+02:00</updated><entry><title>Projects</title><link href="http://marcel.is/projects.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:projects.html</id><summary type="html">&lt;p&gt;Here's a list of my open-source projects. Also on &lt;a href="http://github.com/mkrcah"&gt;github&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;Hadoop tooling&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;Although these tools are used in production, some of the repos would benefit from wrapping up.&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/datadudes/cornet"&gt;Cornet&lt;/a&gt; - Command-line tool on top of Apache Sqoop to simplify ingestion of data from RDBMs to Hive.&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/datadudes/odata2avro"&gt;odata2avro&lt;/a&gt; - Command-line tool to convert OpenData XML from Microsoft MarketPlace to Apache Avro files.&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/datadudes/impala-rest-api"&gt;Impala REST API&lt;/a&gt; - Thin REST API for Impala with Redis caching (co-author)&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/datadudes/wsdl2avro"&gt;wsdl2avro&lt;/a&gt; - Scala library to convert datatypes from a SOAP WSDL to Avro Schemas (advisor)&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/datadudes/salesforce2hadoop"&gt;salesforce2hadoop&lt;/a&gt; - Import Salesforce data into Hadoop HDFS in Avro format (advisor)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Hadoop experimentation&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;Virtual Zookeper cluster&lt;/a&gt; - A 3-node virtual Apache Zookeper cluster with Vagrant, VirtualBox and Ansible&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/scala-kafka-twitter"&gt;Kafka-Spark-Twitter-Scala&lt;/a&gt; - Example integration of Kafka, Avro and Spark-Streaming on live Twitter feed, written in Scala&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;For fun&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/random-text-detector"&gt;Random text detector&lt;/a&gt; - Automatic detector of random text based on inverse-document-frequency&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/fractal-generator"&gt;Fractal generator&lt;/a&gt; - Generator of Mandelbrot and Julia fractals written in Scala. This was my first Scala code. Now, I'd write it very differently :)&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/propsort"&gt;Propsort&lt;/a&gt; - Sort your Java/Scala/Play properties file according to a given template&lt;/li&gt;
+&lt;/ul&gt;</summary></entry><entry><title>Talks</title><link href="http://marcel.is/talks.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:talks.html</id><summary type="html">&lt;h2&gt;Dec 2014: Hadoop in Practice (SDN Conference)&lt;/h2&gt;
+&lt;p&gt;It was great fun talking at SDN about how we use Hadoop at &lt;a href="http://www.thenewmotion.com/uk/"&gt;TheNewMotion&lt;/a&gt;. The talk was mostly focused on the Business Intelligence aspect of our Hadoop stack and the Cloudera Hadoop Distribution that we use. Thanks to &lt;a href="http://dandydev.net/"&gt;Daan&lt;/a&gt; for helping me preparing the talk.&lt;/p&gt;
+&lt;iframe src="//www.slideshare.net/slideshow/embed_code/key/8Zi4JG4MBsLrQi" width="595" height="485" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC; border-width:1px; margin-bottom:5px; max-width: 100%;" allowfullscreen&gt; &lt;/iframe&gt;</summary></entry><entry><title>How a newline can ruin your Hive</title><link href="http://marcel.is/how-newline-can-ruin-your-hive.html" rel="alternate"></link><published>2015-05-05T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2015-05-05:how-newline-can-ruin-your-hive.html</id><summary type="html">&lt;p&gt;If you do not fully understand how Hive/Impala stores your data, it might cost you badly.&lt;/p&gt;
 &lt;p&gt;I've learnt the hard way.&lt;/p&gt;
 &lt;h2&gt;Symptom #1: Weird values in ingested Hive table&lt;/h2&gt;
 &lt;p&gt;You double-checked with &lt;code&gt;select distinct(gender) from customers&lt;/code&gt; that the &lt;code&gt;gender&lt;/code&gt; column in your source RDBMS really contains only values &lt;code&gt;male&lt;/code&gt;, &lt;code&gt;female&lt;/code&gt; and &lt;code&gt;NULL&lt;/code&gt;. However, when you ingest the table into Hive (maybe with &lt;a href="http://sqoop.apache.org/"&gt;Apache Sqoop&lt;/a&gt; or &lt;a href="https://github.com/datadudes/cornet"&gt;Cornet&lt;/a&gt;) and run the check there,  you see that weird values have creeped in:&lt;/p&gt;
