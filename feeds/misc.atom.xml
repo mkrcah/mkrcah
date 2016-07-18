@@ -524,4 +524,4 @@ this &lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;automat
         "}";
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
-&lt;/script&gt;</summary><category term="machine learning"></category></entry></feed>
+&lt;/script&gt;</summary><category term="machine learning"></category></entry><entry><title>Not found</title><link href="http://marcel.is/404.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-02:404.html</id><summary type="html">&lt;p&gt;Sorry, I redesigned the blog recently and might have broken a few permalinks.&lt;/p&gt;</summary></entry></feed>
