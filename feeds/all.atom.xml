@@ -33,10 +33,36 @@ Resist.&lt;/p&gt;
 &lt;p&gt;When you are with your loved one, you are with your loved one.&lt;/p&gt;
 &lt;p&gt;No distractions.&lt;/p&gt;
 &lt;p&gt;Present. In the moment.&lt;/p&gt;
-&lt;p&gt;Those days are the best.&lt;/p&gt;</summary></entry><entry><title>Connect</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;If you'd like to connect and receive updates on new articles,
-please write me an email to &lt;a href="mailto:marcel.krcah@gmail.com?subject=Connect"&gt;marcel.krcah@gmail.com&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;A few sentences about yourself and why would you like to connect would be great.&lt;/p&gt;
-&lt;p&gt;Looking forward to getting to know you.&lt;/p&gt;</summary></entry><entry><title>Projects</title><link href="http://marcel.is/projects.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:projects.html</id><summary type="html">&lt;p&gt;Here's a list of my open-source projects. Also on &lt;a href="http://github.com/mkrcah"&gt;github&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Those days are the best.&lt;/p&gt;</summary></entry><entry><title>Connect</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;Please write me an email on &lt;a href="mailto:connect@marcel.is"&gt;marcel.krcah@gmail.com&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Get on my &lt;strong&gt;private email list&lt;/strong&gt; and get updates on new articles.&lt;/p&gt;
+&lt;form
+  action="//marcelkrcah.us10.list-manage.com/subscribe/post?u=c71a562300563c7a54790cdad&amp;amp;id=6c8ad27cb1"
+  method="post"
+  id="mc-embedded-subscribe-form"
+  name="mc-embedded-subscribe-form"
+  class="validate" target="_blank" novalidate&gt;
+  &lt;div&gt;
+    &lt;label for="mce-NAME"&gt;Your name:&lt;/label&gt;
+    &lt;input type="text" value="" name="NAME" class="required" id="mce-NAME"&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;label for="mce-EMAIL"&gt;Your email:&lt;/label&gt;
+    &lt;input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL"&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+     &lt;label for="mce-GEEK"&gt;Geek?&lt;/label&gt;
+   &lt;select name="GEEK" class="required" id="mce-GEEK"&gt;
+      &lt;option value=""&gt;&lt;/option&gt;
+      &lt;option value="No! Don't send me articles about coding."&gt;No! Don't send me articles about coding.&lt;/option&gt;
+      &lt;option value="Yes! Send me also articles about coding."&gt;Yes! Send me also articles about coding.&lt;/option&gt;
+    &lt;/select&gt;
+    &lt;/div&gt;
+    &lt;!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups--&gt;
+  &lt;div style="position: absolute; left: -5000px;" aria-hidden="true"&gt;
+    &lt;input type="text" name="b_c71a562300563c7a54790cdad_6c8ad27cb1" tabindex="-1" value=""&gt;
+  &lt;/div&gt;
+  &lt;input type="submit" value="OK! Let's keep in touch" name="subscribe" id="mc-embedded-subscribe" class="button"&gt;
+&lt;/form&gt;</summary></entry><entry><title>Projects</title><link href="http://marcel.is/projects.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:projects.html</id><summary type="html">&lt;p&gt;Here's a list of my open-source projects. Also on &lt;a href="http://github.com/mkrcah"&gt;github&lt;/a&gt;.&lt;/p&gt;
 &lt;h2&gt;Hadoop tooling&lt;/h2&gt;
 &lt;p&gt;&lt;em&gt;Although these tools are used in production, some of the repos would benefit from wrapping up.&lt;/em&gt;&lt;/p&gt;
 &lt;ul&gt;

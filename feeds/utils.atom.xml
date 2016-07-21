@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/utils.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-07-19T00:00:00+02:00</updated><entry><title>Connect</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;If you'd like to connect and receive updates on new articles,
-please write me an email to &lt;a href="mailto:marcel.krcah@gmail.com?subject=Connect"&gt;marcel.krcah@gmail.com&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;A few sentences about yourself and why would you like to connect would be great.&lt;/p&gt;
-&lt;p&gt;Looking forward to getting to know you.&lt;/p&gt;</summary></entry><entry><title>Not found</title><link href="http://marcel.is/404.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-02:404.html</id><summary type="html">&lt;p&gt;Sorry, I redesigned the blog recently and might have broken a few permalinks.&lt;/p&gt;</summary></entry></feed>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/utils.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-07-19T00:00:00+02:00</updated><entry><title>Connect</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;Please write me an email on &lt;a href="mailto:connect@marcel.is"&gt;marcel.krcah@gmail.com&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Get on my &lt;strong&gt;private email list&lt;/strong&gt; and get updates on new articles.&lt;/p&gt;
+&lt;form
+  action="//marcelkrcah.us10.list-manage.com/subscribe/post?u=c71a562300563c7a54790cdad&amp;amp;id=6c8ad27cb1"
+  method="post"
+  id="mc-embedded-subscribe-form"
+  name="mc-embedded-subscribe-form"
+  class="validate" target="_blank" novalidate&gt;
+  &lt;div&gt;
+    &lt;label for="mce-NAME"&gt;Your name:&lt;/label&gt;
+    &lt;input type="text" value="" name="NAME" class="required" id="mce-NAME"&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;label for="mce-EMAIL"&gt;Your email:&lt;/label&gt;
+    &lt;input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL"&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+     &lt;label for="mce-GEEK"&gt;Geek?&lt;/label&gt;
+   &lt;select name="GEEK" class="required" id="mce-GEEK"&gt;
+      &lt;option value=""&gt;&lt;/option&gt;
+      &lt;option value="No! Don't send me articles about coding."&gt;No! Don't send me articles about coding.&lt;/option&gt;
+      &lt;option value="Yes! Send me also articles about coding."&gt;Yes! Send me also articles about coding.&lt;/option&gt;
+    &lt;/select&gt;
+    &lt;/div&gt;
+    &lt;!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups--&gt;
+  &lt;div style="position: absolute; left: -5000px;" aria-hidden="true"&gt;
+    &lt;input type="text" name="b_c71a562300563c7a54790cdad_6c8ad27cb1" tabindex="-1" value=""&gt;
+  &lt;/div&gt;
+  &lt;input type="submit" value="OK! Let's keep in touch" name="subscribe" id="mc-embedded-subscribe" class="button"&gt;
+&lt;/form&gt;</summary></entry><entry><title>Not found</title><link href="http://marcel.is/404.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-02:404.html</id><summary type="html">&lt;p&gt;Sorry, I redesigned the blog recently and might have broken a few permalinks.&lt;/p&gt;</summary></entry></feed>

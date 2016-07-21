@@ -473,12 +473,39 @@ table td, table th {
   padding: 0.2em 0.5em;
 }
 
-/* line 146, ../../compass/main.scss */
+/* line 141, ../../compass/main.scss */
+input {
+  border: 1px solid #ABB0B2;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+
+/* line 142, ../../compass/main.scss */
+.button {
+  clear: both;
+  background-color: #777;
+  border: 0 none;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 32px;
+  margin-top: 5px;
+  padding: 0 10px;
+  text-decoration: none;
+  vertical-align: top;
+  white-space: nowrap;
+  width: auto;
+}
+
+/* line 165, ../../compass/main.scss */
 .mono, pre, p code, p tt, li code, li tt {
   font-family: Menlo, Monaco, "Andale Mono", "lucida console", "Courier New", monospace;
 }
 
-/* line 148, ../../compass/main.scss */
+/* line 167, ../../compass/main.scss */
 pre {
   margin: 19px 0 0 0;
   color: #444;
@@ -488,7 +515,7 @@ pre {
   padding: .8em 1em;
 }
 
-/* line 161, ../../compass/main.scss */
+/* line 180, ../../compass/main.scss */
 p code, p tt, li code, li tt {
   color: #444;
   border: 1px solid #ddd;
