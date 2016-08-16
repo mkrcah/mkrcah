@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/inspiration.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-08-01T00:00:00+02:00</updated><entry><title>Read like a stoic</title><link href="http://marcel.is/book.html" rel="alternate"></link><published>2016-08-01T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-08-01:book.html</id><summary type="html">&lt;p&gt;What if you will never hold that book again?&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/inspiration.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-08-01T00:00:00+02:00</updated><entry><title>Read like a stoic</title><link href="http://marcel.is/read.html" rel="alternate"></link><published>2016-08-01T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-08-01:read.html</id><summary type="html">&lt;p&gt;What if you will never hold that book again?&lt;/p&gt;
 &lt;p&gt;What if this is the last time that book is available to you?&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;p&gt;A bit sad, isn't it?&lt;/p&gt;
