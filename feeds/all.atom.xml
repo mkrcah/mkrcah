@@ -684,27 +684,4 @@ this &lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;automat
 &lt;h2&gt;Strive for focus and simplicity&lt;/h2&gt;
 &lt;p&gt;Choose one thing and be the best at it. Stop marginal legacy business lines. Refuse niche requests from small customers. Simplify as much as possible.&lt;/p&gt;
 &lt;p&gt;Only when the product is saturated, expand. Do it with sharp focus. Create another product which will be the best at what it offers.&lt;/p&gt;
-&lt;p&gt;Simplify and keep focused!&lt;/p&gt;</summary></entry><entry><title>How not to do big-data</title><link href="http://marcel.is/big-data-lessons.html" rel="alternate"></link><published>2000-01-01T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-01:big-data-lessons.html</id><summary type="html">&lt;p&gt;I was very excited when I joined a colleague on a project to build The Big Data Platform. Finally, I could play with all the cool technologies that everybody was talking about. No more tiresome evening hours. Full-time.&lt;/p&gt;
-&lt;h2&gt;Journey begins&lt;/h2&gt;
-&lt;p&gt;We did everything according to the book.&lt;/p&gt;
-&lt;p&gt;We built a powerful and fast data warehouse. It unified all our databases in one place with an exploratory user interface on top. We delivered an ETL pipeline which cleaned the source data and combined them in a novel way. We were on the bleeding-edge: multi-node Hadoop cluster, Impala, Spark, Sqoop, Hue. Along the way, we created &lt;a href="https://github.com/datadudes"&gt;open-source tooling&lt;/a&gt; that we lacked in the standard stack.&lt;/p&gt;
-&lt;p&gt;It was amazing!&lt;/p&gt;
-&lt;p&gt;It was several months until we finished the technical part.&lt;/p&gt;
-&lt;p&gt;I was happy with our deliverable. The management was also satisfied: we were &lt;em&gt;"finally doing the big-data"&lt;/em&gt;. Colleagues were happy - we taught them SQL and gave them a tool to explore data on their own. We had several insightful reports in place and a few interesting ideas on our own on how to continue.&lt;/p&gt;
-&lt;h2&gt;And then it hit us.&lt;/h2&gt;
-&lt;p&gt;The emptiness.&lt;/p&gt;
-&lt;p&gt;The "Now what?" question.&lt;/p&gt;
-&lt;p&gt;Our own ideas about how to continue didn't feel quite right. The team had much more pressing projects in the pipeline. Pursuit of our ideas felt like a luxury.&lt;/p&gt;
-&lt;p&gt;I realized that we have ended up with a very expensive high-maintenance and complex toy that didn't justify its existence.&lt;/p&gt;
-&lt;p&gt;I felt we could have achieved the same result much faster with a more "boring" technological stack.&lt;/p&gt;
-&lt;p&gt;For large part, we chased technology instead of solving a problem as quickly and efficiently as possible.&lt;/p&gt;
-&lt;h2&gt;Lesson learned&lt;/h2&gt;
-&lt;p&gt;This is what we should have done:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;First, &lt;a href="/quench"&gt;ignore the thirst&lt;/a&gt;&lt;/strong&gt;. Clear the mind from any technology-related thrills.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Find a problem, before jumping into solution.&lt;/strong&gt; Talk in person to every stakeholder who might benefit from data-related answers. Deeply understand these opportunities and formulate them as explicitly as possible. Compose a prioritized list of data questions that the company strives for.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Build a very minimal solution&lt;/strong&gt; which would answer the highest priority question. It might be as simple as a SQL query over existing database. Or an &lt;a href="https://ipython.org/"&gt;IPython&lt;/a&gt; notebook with a machine-learning prototype. Or just a simple Google Spreadsheet. Don't underestimate the power of simple tools. Resist code development as much as possible. Don't automate. Focus on validation.&lt;/li&gt;
-&lt;li&gt;Only if the solution is validated and these "boring" technologies do not suffice anymore, start carefully considering a beast like Hadoop and Spark.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;This way, you won't hit a roadblock like we did.&lt;/p&gt;
-&lt;p&gt;Instead, you will deliver a high-quality and spot-on solution. And the thrill from business impact would be much better that the thrill from the technology.&lt;/p&gt;</summary></entry></feed>
+&lt;p&gt;Simplify and keep focused!&lt;/p&gt;</summary></entry></feed>
