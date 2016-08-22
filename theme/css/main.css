@@ -335,9 +335,9 @@ body {
   color: #444;
   font-family: Helvetica, sans-serif;
   font-size: 18px;
-  max-width: 30em;
-  margin: 60px 60px 60px 60px;
+  max-width: 35em;
   line-height: 1.6;
+  margin: 60px auto;
 }
 
 /* line 24, ../../compass/main.scss */
@@ -370,7 +370,7 @@ body {
 /* line 50, ../../compass/main.scss */
 h1, h2, h3 {
   line-height: 1.2;
-  margin: 30px 0 0 0;
+  margin: 40px 0 0 0;
 }
 
 /* line 55, ../../compass/main.scss */
