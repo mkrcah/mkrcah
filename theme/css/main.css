@@ -364,7 +364,7 @@ body {
 .footer a:-webkit-any-link {
   color: rgba(0, 0, 0, 0.44);
   text-decoration: none !important;
-  font-size: 0.7em;
+  font-size: 0.9em;
 }
 
 /* line 50, ../../compass/main.scss */
@@ -527,9 +527,4 @@ p code, p tt, li code, li tt {
   display: inline-block;
   padding: 0 .3em;
   margin: -1px 0;
-}
-
-/* line 201, ../../compass/main.scss */
-div.timeline-Header {
-  display: none !important;
 }

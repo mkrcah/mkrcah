@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/utils.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-07-19T00:00:00+02:00</updated><entry><title>Connect</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;Please write me an email on &lt;a href="mailto:m@marcel.is"&gt;m@marcel.is&lt;/a&gt;.&lt;/p&gt;
-&lt;p&gt;Get on my &lt;strong&gt;private email list&lt;/strong&gt; and get updates on new articles.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/utils.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-07-19T00:00:00+02:00</updated><entry><title>Connect with me</title><link href="http://marcel.is/connect.html" rel="alternate"></link><published>2016-07-19T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-07-19:connect.html</id><summary type="html">&lt;p&gt;In general, I welcome any email on &lt;a href="mailto:m@marcel.is"&gt;m@marcel.is&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you are a recruiter, please connect &lt;a href="//bit.ly/recruit-mk"&gt;here&lt;/a&gt;, which increases
+chances of our collaboration.&lt;/p&gt;
+
+&lt;p&gt;If social networks is your thing, checkout
+  &lt;a href="https://twitter.com/mkrcah"&gt;Twitter&lt;/a&gt;,
+  &lt;a href="https://nl.linkedin.com/in/marcel-krcah-0178a027"&gt;LinkedIn&lt;/a&gt;,
+  &lt;a href="https://github.com/mkrcah"&gt;GitHub&lt;/a&gt;,
+  &lt;a href="http://stackoverflow.com/users/3447606/marcel-krcah"&gt;Stack Overflow&lt;/a&gt;.
+&lt;/p&gt;
+
+&lt;p&gt;If you prefer private email list (1-2 emails per month), subscribe below:&lt;/p&gt;
+
 &lt;form
   action="//marcelkrcah.us10.list-manage.com/subscribe/post?u=c71a562300563c7a54790cdad&amp;amp;id=6c8ad27cb1"
   method="post"
@@ -27,5 +39,5 @@
   &lt;div style="position: absolute; left: -5000px;" aria-hidden="true"&gt;
     &lt;input type="text" name="b_c71a562300563c7a54790cdad_6c8ad27cb1" tabindex="-1" value=""&gt;
   &lt;/div&gt;
-  &lt;input type="submit" value="OK! Let's keep in touch" name="subscribe" id="mc-embedded-subscribe" class="button"&gt;
+  &lt;input type="submit" value="Get me in" name="subscribe" id="mc-embedded-subscribe" class="button"&gt;
 &lt;/form&gt;</summary></entry><entry><title>Not found</title><link href="http://marcel.is/404.html" rel="alternate"></link><published>2000-01-02T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2000-01-02:404.html</id><summary type="html">&lt;p&gt;Sorry, I redesigned the blog recently and might have broken a few permalinks.&lt;/p&gt;</summary></entry></feed>
