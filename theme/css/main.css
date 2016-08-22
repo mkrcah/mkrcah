@@ -528,3 +528,8 @@ p code, p tt, li code, li tt {
   padding: 0 .3em;
   margin: -1px 0;
 }
+
+/* line 201, ../../compass/main.scss */
+div.timeline-Header {
+  display: none !important;
+}
