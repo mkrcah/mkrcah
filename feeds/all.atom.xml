@@ -63,7 +63,8 @@ chances of our collaboration.&lt;/p&gt;
   &lt;a href="https://twitter.com/mkrcah"&gt;Twitter&lt;/a&gt;,
   &lt;a href="https://nl.linkedin.com/in/marcel-krcah-0178a027"&gt;LinkedIn&lt;/a&gt;,
   &lt;a href="https://github.com/mkrcah"&gt;GitHub&lt;/a&gt;,
-  &lt;a href="http://stackoverflow.com/users/3447606/marcel-krcah"&gt;Stack Overflow&lt;/a&gt;.
+  &lt;a href="http://stackoverflow.com/users/3447606/marcel-krcah"&gt;Stack Overflow&lt;/a&gt;,
+  &lt;a href="https://hub.docker.com/u/mkrcah/"&gt;DockerHub&lt;/a&gt;.
 &lt;/p&gt;
 
 &lt;p&gt;If you prefer private email list (1-2 emails per month), subscribe below:&lt;/p&gt;
@@ -109,6 +110,10 @@ chances of our collaboration.&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;Virtual Zookeper cluster&lt;/a&gt; - A 3-node virtual Apache Zookeper cluster with Vagrant, VirtualBox and Ansible&lt;/li&gt;
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/scala-kafka-twitter"&gt;Kafka-Spark-Twitter-Scala&lt;/a&gt; - Example integration of Kafka, Avro and Spark-Streaming on live Twitter feed, written in Scala&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;Bank scraping&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/airbank-tx"&gt;AirBank-tx&lt;/a&gt; - Download bank account transactions and read account balance from AirBank.cz internet banking (Selenium, headless Chrome, Docker)&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2&gt;For fun&lt;/h2&gt;
 &lt;ul&gt;

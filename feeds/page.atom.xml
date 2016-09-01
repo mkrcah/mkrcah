@@ -14,6 +14,10 @@
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/virtual-zookeeper-cluster"&gt;Virtual Zookeper cluster&lt;/a&gt; - A 3-node virtual Apache Zookeper cluster with Vagrant, VirtualBox and Ansible&lt;/li&gt;
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/scala-kafka-twitter"&gt;Kafka-Spark-Twitter-Scala&lt;/a&gt; - Example integration of Kafka, Avro and Spark-Streaming on live Twitter feed, written in Scala&lt;/li&gt;
 &lt;/ul&gt;
+&lt;h2&gt;Bank scraping&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/airbank-tx"&gt;AirBank-tx&lt;/a&gt; - Download bank account transactions and read account balance from AirBank.cz internet banking (Selenium, headless Chrome, Docker)&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h2&gt;For fun&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/random-text-detector"&gt;Random text detector&lt;/a&gt; - Automatic detector of random text based on inverse-document-frequency&lt;/li&gt;
