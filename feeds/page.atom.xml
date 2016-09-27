@@ -19,7 +19,8 @@
 The tool automatically downloads my bank account statements, merge them, clean them. On top of it, it provides insights about my spending and income in a &lt;a href="http://www.metabase.com/"&gt;MetaBase&lt;/a&gt; dashboard. Part of the pipeline is open-source:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="https://github.com/mkrcah/airbank-tx"&gt;AirBank-tx&lt;/a&gt; - Download bank account transactions AirBank.cz&lt;/li&gt;
-&lt;li&gt;&lt;a href="https://github.com/mkrcah/abnamro-tx"&gt;ABNAmro-tx&lt;/a&gt; - - Download bank account transactions from ABNAmbro.nl&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/abnamro-tx"&gt;ABNAmro-tx&lt;/a&gt; - Download bank account transactions from ABNAmbro.nl&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/mkrcah/ov-chipkaart-tx"&gt;OV Chipkaart&lt;/a&gt; - Download OV Chipkaart travel history&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2&gt;For fun&lt;/h2&gt;
 &lt;ul&gt;
