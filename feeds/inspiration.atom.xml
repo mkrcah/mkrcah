@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/inspiration.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2016-08-01T00:00:00+02:00</updated><entry><title>Read like a stoic</title><link href="http://marcel.is/read.html" rel="alternate"></link><published>2016-08-01T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-08-01:read.html</id><summary type="html">&lt;p&gt;What if you will never hold that book again?&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>marcel.is</title><link href="http://marcel.is/" rel="alternate"></link><link href="http://marcel.is/feeds/inspiration.atom.xml" rel="self"></link><id>http://marcel.is/</id><updated>2017-02-18T00:00:00+01:00</updated><entry><title>Interpersonal conflicts</title><link href="http://marcel.is/conflicts.html" rel="alternate"></link><published>2017-02-18T00:00:00+01:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2017-02-18:conflicts.html</id><summary type="html">&lt;p&gt;...don't exist.&lt;/p&gt;
+&lt;p&gt;...have no form.&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;They are just absence.&lt;/p&gt;
+&lt;p&gt;An absence of communication.&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;A misaligned expectation.&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;Both parties mean good.&lt;/p&gt;
+&lt;p&gt;Both partes do their best.&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;Just point to this vacuum.&lt;/p&gt;
+&lt;p&gt;Directly, without fear, together.&lt;/p&gt;
+&lt;p&gt;&lt;br/&gt;&lt;/p&gt;
+&lt;p&gt;And let compassion fill the empty space.&lt;/p&gt;</summary></entry><entry><title>Read like a stoic</title><link href="http://marcel.is/read.html" rel="alternate"></link><published>2016-08-01T00:00:00+02:00</published><author><name>Marcel Krcah</name></author><id>tag:marcel.is,2016-08-01:read.html</id><summary type="html">&lt;p&gt;What if you will never hold that book again?&lt;/p&gt;
 &lt;p&gt;What if this is the last time that book is available to you?&lt;/p&gt;
 &lt;p&gt;&lt;br/&gt;&lt;/p&gt;
 &lt;p&gt;A bit sad, isn't it?&lt;/p&gt;
